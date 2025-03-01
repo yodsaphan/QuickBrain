@@ -1,5 +1,4 @@
 import React from 'react';
-import { FaSearch } from 'react-icons/fa';
 
 const Header = ({ activeTab, onTabChange }) => {
   return (
@@ -17,9 +16,6 @@ const Header = ({ activeTab, onTabChange }) => {
         >
           For You
         </div>
-      </div>
-      <div className="search-icon">
-        <FaSearch />
       </div>
     </div>
   );

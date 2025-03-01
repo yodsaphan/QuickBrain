@@ -153,11 +153,17 @@ const VideoPlayer = ({ video, isActive, onVideoComplete }) => {
       {/* Video Info */}
       <div className="video-info">
         <div className="username">{video.user.username}</div>
-        <div className="video-description">{video.description}</div>
-        <div className="video-metadata">
-          <span className="subject-tag">{video.subject}</span>
-          <span className="topic-tag">{video.topic}</span>
-          <span className="duration-tag">{video.duration}</span>
+        <div className="video-description">
+          {video.description.split(' ').map((word, index) => 
+            word.startsWith('#') ? 
+              <span key={index} className="hashtag">{word} </span> : 
+              <span key={index}>{word} </span>
+          )}
+        </div>
+        <div className="video-tags">
+          <span className="video-tag primary">{video.subject}</span>
+          <span className="video-tag secondary">{video.topic}</span>
+          <span className="video-tag duration">{video.duration}</span>
         </div>
       </div>
 

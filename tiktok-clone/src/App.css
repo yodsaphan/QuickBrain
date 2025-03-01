@@ -14,6 +14,12 @@ body {
   justify-content: center;
   align-items: center;
   background-color: #222;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+body::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 .app-container {
@@ -26,22 +32,35 @@ body {
   background-color: #000;
   border-radius: 40px;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.app-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 /* Header */
 .header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   padding: 15px;
-  border-bottom: 1px solid #2c2c2c;
-  background-color: #000;
+  border-bottom: none;
+  background: none;
   z-index: 10;
+  position: absolute;
+  width: 100%;
+  top: 10px;
 }
 
 .header-tabs {
   display: flex;
   gap: 20px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 20px;
+  padding: 8px 15px;
+  backdrop-filter: blur(5px);
 }
 
 .tab {
@@ -49,6 +68,7 @@ body {
   font-size: 16px;
   padding: 0 5px;
   cursor: pointer;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .tab.active {
@@ -59,7 +79,7 @@ body {
 .tab.active::after {
   content: '';
   position: absolute;
-  bottom: -15px;
+  bottom: -8px;
   left: 0;
   width: 100%;
   height: 2px;
@@ -67,12 +87,7 @@ body {
 }
 
 .tab:not(.active) {
-  color: #aaa;
-}
-
-.search-icon {
-  font-size: 20px;
-  cursor: pointer;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 /* Main Content */
@@ -80,9 +95,16 @@ body {
   flex: 1;
   overflow-y: auto;
   scroll-snap-type: y mandatory;
-  height: calc(932px - 53px - 50px); /* Full iPhone height minus header and bottom nav */
+  height: calc(932px - 50px);
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  margin-top: 0;
+}
+
+.content::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 .video-container {
@@ -90,6 +112,7 @@ body {
   position: relative;
   scroll-snap-align: start;
   scroll-snap-stop: always;
+  overflow: hidden;
 }
 
 .video-player {
@@ -97,9 +120,11 @@ body {
   height: 100%;
   object-fit: cover;
   background-color: #1e1e1e;
+  position: relative;
+  z-index: 1;
 }
 
-/* Video Actions */
+/* Video Actions - Right Sidebar */
 .video-actions {
   position: absolute;
   right: 15px;
@@ -108,6 +133,11 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 20px;
+  z-index: 5; /* Ensure it's above the video */
+  background-color: rgba(0, 0, 0, 0.1); /* Very subtle background */
+  padding: 15px 10px;
+  border-radius: 30px;
+  backdrop-filter: blur(2px); /* Slight blur effect */
 }
 
 .action-icon {
@@ -115,15 +145,22 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 5px;
+  transition: transform 0.2s;
+}
+
+.action-icon:hover {
+  transform: scale(1.1);
 }
 
 .action-icon svg {
   font-size: 28px;
   cursor: pointer;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3)); /* Add shadow to icons */
 }
 
 .action-count {
   font-size: 12px;
+  font-weight: bold;
 }
 
 .profile-pic {
@@ -132,6 +169,8 @@ body {
   border-radius: 50%;
   background-color: #555;
   position: relative;
+  border: 2px solid #fff; /* Add white border */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Add shadow */
 }
 
 .profile-pic::after {
@@ -151,23 +190,44 @@ body {
   font-weight: bold;
 }
 
-/* Video Info */
+/* Video Info - Left Sidebar */
 .video-info {
   position: absolute;
   left: 15px;
-  bottom: 80px;
-  max-width: 80%;
+  bottom: 30px;
+  max-width: 70%;
+  z-index: 5; /* Ensure it's above the video */
+  background-color: rgba(0, 0, 0, 0.2); /* Subtle background */
+  padding: 15px;
+  border-radius: 12px;
+  backdrop-filter: blur(3px); /* Blur effect */
 }
 
 .username {
   font-weight: bold;
   font-size: 16px;
   margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.username::before {
+  content: '@';
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .video-description {
   font-size: 14px;
   margin-bottom: 10px;
+  line-height: 1.4;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); /* Text shadow for better readability */
+}
+
+/* Adding styles for hashtags to match the image */
+.video-description .hashtag {
+  color: #fff;
+  font-weight: 500;
 }
 
 .music-info {
@@ -175,6 +235,37 @@ body {
   align-items: center;
   gap: 5px;
   font-size: 14px;
+  background-color: rgba(0, 0, 0, 0.3); /* Slightly darker background */
+  padding: 5px 10px;
+  border-radius: 20px;
+  margin-top: 10px;
+  width: fit-content;
+}
+
+/* Adding styles for video tags like "Science", "Earth Science", "45s" */
+.video-tags {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.video-tag {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.video-tag.primary {
+  background-color: #f33356;
+}
+
+.video-tag.secondary {
+  background-color: #1d85e7;
+}
+
+.video-tag.duration {
+  background-color: #555;
 }
 
 /* Video Controls */
