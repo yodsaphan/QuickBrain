@@ -63,7 +63,25 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
+const MAX_PORT_ATTEMPTS = 10;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-}); 
+// Try to start the server with port fallback
+const startServer = (port, attempt = 1) => {
+  const server = app.listen(port)
+    .on('listening', () => {
+      console.log(`Server running on port ${port}`);
+    })
+    .on('error', (err) => {
+      if (err.code === 'EADDRINUSE' && attempt < MAX_PORT_ATTEMPTS) {
+        console.log(`Port ${port} is in use, trying port ${port + 1}...`);
+        server.close();
+        startServer(port + 1, attempt + 1);
+      } else {
+        console.error('Server error:', err);
+        process.exit(1);
+      }
+    });
+};
+
+// Start the server
+startServer(PORT); 
