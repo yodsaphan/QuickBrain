@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { FaUserEdit, FaBookmark, FaHeart, FaLock, FaEllipsisH, FaShare } from 'react-icons/fa';
+import { FaUserEdit, FaBookmark, FaHeart, FaLock, FaEllipsisH, FaShare, FaSignOutAlt } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
-const UserProfile = () => {
+const UserProfile = ({ user: propUser, onLogout }) => {
   const [activeTab, setActiveTab] = useState('videos');
   
-  // Mock user data (in a real app, this would come from Redux or an API)
-  const user = {
+  // Use provided user data or fallback to mock data
+  const user = propUser || {
     username: '@your_username',
     displayName: 'Your Name',
     bio: 'Welcome to my TikTok profile! 🎬 #developer #creator',
@@ -36,12 +36,19 @@ const UserProfile = () => {
       <div className="profile-header">
         <div className="profile-actions">
           <FaUserEdit />
-          <FaEllipsisH />
+          <div className="dropdown-menu">
+            <FaEllipsisH />
+            <div className="dropdown-content">
+              <button onClick={onLogout} className="logout-button">
+                <FaSignOutAlt /> Logout
+              </button>
+            </div>
+          </div>
         </div>
         <div className="profile-info">
           <div className="profile-pic-large" style={{ backgroundImage: `url(${user.profilePic})` }}></div>
           <h2 className="profile-username">{user.username}</h2>
-          <p className="profile-name">{user.displayName}</p>
+          <p className="profile-name">{user.displayName || (propUser && propUser.username)}</p>
         </div>
         
         {/* Profile Stats */}

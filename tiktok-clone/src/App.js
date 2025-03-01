@@ -11,6 +11,7 @@ import UserProfile from './components/Profile/UserProfile';
 import Placeholder from './components/Placeholder';
 import FlashcardGame from './components/Games/FlashcardGame';
 import StreakDisplay from './components/Streaks/StreakDisplay';
+import Login from './components/Auth/Login';
 
 function App() {
   const [activeTab, setActiveTab] = useState('forYou');
@@ -20,6 +21,8 @@ function App() {
   const [streakCount, setStreakCount] = useState(0);
   const [watchedVideos, setWatchedVideos] = useState([]);
   const [gameScores, setGameScores] = useState([]);
+  const [user, setUser] = useState(null);
+  const [showLogin, setShowLogin] = useState(false);
 
   // Sample video data (in a real app, this would come from an API)
   const videos = [
@@ -175,6 +178,8 @@ function App() {
   const handleNavigation = (view) => {
     if (view === 'flashcards') {
       setShowGame(true);
+    } else if (view === 'profile' && !user) {
+      setShowLogin(true);
     } else {
       setCurrentView(view);
       setShowGame(false);
@@ -199,6 +204,24 @@ function App() {
 
   const updateStreak = (points) => {
     setStreakCount(streakCount + points);
+  };
+
+  // Handle login
+  const handleLogin = (userData) => {
+    setUser(userData);
+    setShowLogin(false);
+    setCurrentView('profile');
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    setUser(null);
+    setCurrentView('home');
+  };
+
+  // Close login modal
+  const closeLogin = () => {
+    setShowLogin(false);
   };
 
   // Render the appropriate view based on currentView state
@@ -230,7 +253,7 @@ function App() {
           </>
         );
       case 'profile':
-        return <UserProfile />;
+        return <UserProfile user={user} onLogout={handleLogout} />;
       case 'discover':
         return (
           <Placeholder 
@@ -248,6 +271,8 @@ function App() {
             onBack={() => handleNavigation('home')}
           />
         );
+      case 'login':
+        return <Login onLogin={handleLogin} onClose={closeLogin} />;
       default:
         return null;
     }
@@ -257,6 +282,7 @@ function App() {
     <div className="app-container">
       {renderView()}
       <BottomNav activeView={currentView} onNavigate={handleNavigation} />
+      {showLogin && <Login onLogin={handleLogin} onClose={closeLogin} />}
     </div>
   );
 }

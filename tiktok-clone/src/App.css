@@ -1275,3 +1275,232 @@ body::-webkit-scrollbar {
     font-size: 36px;
   }
 }
+
+/* Auth Styles */
+.auth-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.auth-container {
+  width: 90%;
+  max-width: 380px;
+  background-color: #1a1a1a;
+  border-radius: 12px;
+  padding: 25px;
+  position: relative;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.auth-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.auth-title {
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 24px;
+  color: #fff;
+}
+
+.auth-form {
+  margin-bottom: 20px;
+}
+
+.auth-input-group {
+  position: relative;
+  margin-bottom: 15px;
+}
+
+.auth-icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #aaa;
+}
+
+.auth-input-group input {
+  width: 100%;
+  padding: 15px 15px 15px 45px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background-color: #222;
+  color: #fff;
+  font-size: 16px;
+}
+
+.auth-input-group input:focus {
+  outline: none;
+  border-color: #fe2c55;
+}
+
+.auth-button {
+  width: 100%;
+  padding: 15px;
+  border-radius: 8px;
+  border: none;
+  background-color: #fe2c55;
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.auth-button:hover {
+  background-color: #e62a4d;
+}
+
+.auth-separator {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+  color: #aaa;
+}
+
+.auth-separator::before,
+.auth-separator::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: #333;
+}
+
+.auth-separator span {
+  padding: 0 10px;
+  font-size: 14px;
+}
+
+.social-login {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.social-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background-color: transparent;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.social-button.google:hover {
+  background-color: rgba(219, 68, 55, 0.1);
+  border-color: #db4437;
+}
+
+.social-button.facebook:hover {
+  background-color: rgba(66, 103, 178, 0.1);
+  border-color: #4267B2;
+}
+
+.social-button.apple:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: #fff;
+}
+
+.auth-toggle {
+  text-align: center;
+  font-size: 14px;
+  color: #aaa;
+}
+
+.auth-toggle button {
+  background: none;
+  border: none;
+  color: #fe2c55;
+  font-weight: bold;
+  cursor: pointer;
+  margin-left: 5px;
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: #1a1a1a;
+  min-width: 160px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  z-index: 10;
+  overflow: hidden;
+}
+
+.dropdown-menu:hover .dropdown-content {
+  display: block;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.logout-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 15px;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.logout-button:hover {
+  background-color: rgba(254, 44, 85, 0.1);
+  color: #fe2c55;
+}
