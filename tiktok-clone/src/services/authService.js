@@ -3,11 +3,24 @@ import {
   registerWithFirebase, 
   loginWithFirebase, 
   logoutFromFirebase, 
-  getCurrentUserData,
-  resetPassword
+  getCurrentUserData
 } from '../firebase/auth';
 import { auth } from '../firebase/firebase';
 import jwt from 'jsonwebtoken';
+import { 
+  signInWithPopup, 
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  sendPasswordResetEmail
+} from 'firebase/auth';
+import { 
+  googleProvider, 
+  facebookProvider, 
+  appleProvider 
+} from '../firebase/firebase';
+import { db } from '../firebase/firebase';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 // Generate a token for the user (client-side only, for demo purposes)
 // In a real app, this would be done on the server
@@ -108,37 +121,19 @@ export const logout = async () => {
 };
 
 // Get current user
-export const getCurrentUser = async () => {
-  try {
-    // Check if user is logged in with Firebase
-    const firebaseUser = auth.currentUser;
-    
-    if (!firebaseUser) {
-      throw new Error('User not authenticated');
-    }
-    
-    // Get additional user data from Firestore
-    const userDoc = await getCurrentUserData(firebaseUser.uid);
-    
-    // Create user object
-    const user = {
-      id: firebaseUser.uid,
-      email: firebaseUser.email,
-      username: userDoc.username,
-      profilePic: userDoc.profilePictureUrl,
-      ...userDoc
-    };
-    
-    return { success: true, user };
-  } catch (error) {
-    throw { message: error.message || 'Failed to get current user' };
-  }
+export const getCurrentUser = () => {
+  return new Promise((resolve, reject) => {
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      unsubscribe();
+      resolve(user);
+    }, reject);
+  });
 };
 
-// Reset password
+// Reset password (legacy function)
 export const resetUserPassword = async (email) => {
   try {
-    await resetPassword(email);
+    await sendPasswordResetEmail(auth, email);
     return { success: true, message: 'Password reset email sent' };
   } catch (error) {
     throw { message: error.message || 'Failed to send password reset email' };
@@ -156,4 +151,114 @@ export const isAuthenticated = () => {
 export const getStoredUser = () => {
   const user = localStorage.getItem('user');
   return user ? JSON.parse(user) : null;
+};
+
+// Helper function to create user profile in Firestore
+const createUserProfile = async (user, additionalData = {}) => {
+  if (!user) return;
+
+  const userRef = doc(db, 'users', user.uid);
+  const snapshot = await getDoc(userRef);
+
+  // If user doesn't exist in Firestore, create a new document
+  if (!snapshot.exists()) {
+    const { displayName, email, photoURL } = user;
+    const createdAt = serverTimestamp();
+
+    try {
+      await setDoc(userRef, {
+        displayName,
+        email,
+        photoURL,
+        createdAt,
+        streakCount: 0,
+        watchedVideos: [],
+        gameScores: [],
+        ...additionalData
+      });
+    } catch (error) {
+      console.error('Error creating user', error.message);
+    }
+  }
+
+  return userRef;
+};
+
+// Sign in with Google
+export const signInWithGoogle = async () => {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    await createUserProfile(result.user);
+    return result.user;
+  } catch (error) {
+    console.error('Error signing in with Google', error);
+    throw error;
+  }
+};
+
+// Sign in with Facebook
+export const signInWithFacebook = async () => {
+  try {
+    const result = await signInWithPopup(auth, facebookProvider);
+    await createUserProfile(result.user);
+    return result.user;
+  } catch (error) {
+    console.error('Error signing in with Facebook', error);
+    throw error;
+  }
+};
+
+// Sign in with Apple
+export const signInWithApple = async () => {
+  try {
+    const result = await signInWithPopup(auth, appleProvider);
+    await createUserProfile(result.user);
+    return result.user;
+  } catch (error) {
+    console.error('Error signing in with Apple', error);
+    throw error;
+  }
+};
+
+// Sign in with email and password
+export const signInWithEmail = async (email, password) => {
+  try {
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    return result.user;
+  } catch (error) {
+    console.error('Error signing in with email', error);
+    throw error;
+  }
+};
+
+// Sign up with email and password
+export const signUpWithEmail = async (email, password, displayName) => {
+  try {
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    await createUserProfile(result.user, { displayName });
+    return result.user;
+  } catch (error) {
+    console.error('Error signing up with email', error);
+    throw error;
+  }
+};
+
+// Sign out
+export const signOutUser = async () => {
+  try {
+    await signOut(auth);
+  } catch (error) {
+    console.error('Error signing out', error);
+    throw error;
+  }
+};
+
+// Reset password (new function)
+export const resetPassword = async (email) => {
+  try {
+    await sendPasswordResetEmail(auth, email);
+  } catch (error) {
+    console.error('Error resetting password', error);
+    throw error;
+  }
 }; 

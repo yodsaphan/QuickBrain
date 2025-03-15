@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { FaHeart, FaCommentDots, FaShare, FaMusic, FaVolumeUp, FaVolumeMute, FaChevronUp, FaGraduationCap, FaBrain, FaRobot } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
-const VideoPlayer = ({ video, isActive, onVideoComplete }) => {
+const VideoPlayer = ({ video, isActive, onVideoComplete, onAIChat }) => {
   const videoRef = useRef(null);
   const [isMuted, setIsMuted] = useState(true);
   const [progress, setProgress] = useState(0);
@@ -116,6 +116,13 @@ const VideoPlayer = ({ video, isActive, onVideoComplete }) => {
       {/* Video Controls */}
       <div className="video-controls" onClick={toggleMute}>
         {isMuted ? <FaVolumeMute /> : <FaVolumeUp />}
+        <button 
+          className="video-control-button ai-button"
+          onClick={() => onAIChat(video)}
+          title="Ask AI about this video"
+        >
+          <FaRobot />
+        </button>
       </div>
       
       {/* Video Actions */}

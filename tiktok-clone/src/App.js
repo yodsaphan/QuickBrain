@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import { FaSearch, FaGamepad, FaFire, FaUser, FaBrain, FaComment, FaQuestion } from 'react-icons/fa';
+import { FaSearch, FaGamepad, FaFire, FaUser, FaBrain, FaComment, FaQuestion, FaRobot } from 'react-icons/fa';
 import { BsLightningChargeFill } from 'react-icons/bs';
+import { auth } from './firebase/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 // Import components
 import VideoFeed from './components/Feed/VideoFeed';
@@ -12,6 +14,7 @@ import Placeholder from './components/Placeholder';
 import FlashcardGame from './components/Games/FlashcardGame';
 import StreakDisplay from './components/Streaks/StreakDisplay';
 import Login from './components/Auth/Login';
+import AIChat from './components/AI/AIChat';
 
 function App() {
   const [activeTab, setActiveTab] = useState('forYou');
@@ -23,6 +26,7 @@ function App() {
   const [gameScores, setGameScores] = useState([]);
   const [user, setUser] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
+  const [showAIChat, setShowAIChat] = useState(false);
 
   // Sample video data (in a real app, this would come from an API)
   const videos = [
@@ -167,6 +171,26 @@ function App() {
     }
   }, [currentVideoIndex, watchedVideos, showGame]);
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in
+        setUser({
+          _id: user.uid,
+          username: user.displayName || `user_${user.uid.substring(0, 5)}`,
+          email: user.email,
+          profilePic: user.photoURL || '/profiles/default.jpg'
+        });
+      } else {
+        // User is signed out
+        setUser(null);
+      }
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
   };
@@ -248,6 +272,7 @@ function App() {
                 currentIndex={currentVideoIndex} 
                 onVideoChange={handleVideoChange}
                 onVideoComplete={handleVideoComplete}
+                onAIChat={() => setShowAIChat(true)}
               />
             </main>
           </>
@@ -283,6 +308,19 @@ function App() {
       {renderView()}
       <BottomNav activeView={currentView} onNavigate={handleNavigation} />
       {showLogin && <Login onLogin={handleLogin} onClose={closeLogin} />}
+      {showAIChat && (
+        <AIChat 
+          onClose={() => setShowAIChat(false)} 
+          videoContent={videos[currentVideoIndex]?.description || ''}
+        />
+      )}
+      <button 
+        className="ai-chat-button" 
+        onClick={() => setShowAIChat(true)}
+      >
+        <FaRobot />
+        <span>AI Chat</span>
+      </button>
     </div>
   );
 }
