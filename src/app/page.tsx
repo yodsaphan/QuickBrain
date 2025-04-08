@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { FaSearch, FaGamepad, FaFire, FaUser, FaBrain, FaComment, FaQuestion, FaRobot, FaPlus } from 'react-icons/fa';
 import { BsLightningChargeFill } from 'react-icons/bs';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, isValidConfig } from '@/lib/firebase';
 import { useDispatch } from 'react-redux';
 import { setUser } from '@/lib/store';
 import { User, Video, FlashcardQuestion } from '@/types';
@@ -128,6 +128,12 @@ export default function Home() {
   };
 
   useEffect(() => {
+    // Check if Firebase is properly configured
+    if (!isValidConfig) {
+      console.warn('Firebase is not properly configured. Authentication features will not work.');
+      return;
+    }
+    
     // Check if user is authenticated
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
