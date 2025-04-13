@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { FaTimes, FaPaperPlane, FaRobot, FaUser } from 'react-icons/fa';
+import React, { useState, useRef, useEffect } from "react";
+import { FaTimes, FaPaperPlane, FaRobot, FaUser } from "react-icons/fa";
 
 interface AIChatProps {
   onClose: () => void;
@@ -9,20 +9,23 @@ interface AIChatProps {
 interface Message {
   id: string;
   text: string;
-  sender: 'user' | 'ai';
+  sender: "user" | "ai";
   timestamp: Date;
 }
 
 const AIChat: React.FC<AIChatProps> = ({ onClose, videoContent }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: '1',
-      text: `Hi there! I'm your QuickBrain AI assistant. I can help you understand the content better. What questions do you have about "${videoContent.substring(0, 50)}..."?`,
-      sender: 'ai',
-      timestamp: new Date()
-    }
+      id: "1",
+      text: `Hi there! I'm your QuickBrain AI assistant. I can help you understand the content better. What questions do you have about "${videoContent.substring(
+        0,
+        50
+      )}..."?`,
+      sender: "ai",
+      timestamp: new Date(),
+    },
   ]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -31,33 +34,33 @@ const AIChat: React.FC<AIChatProps> = ({ onClose, videoContent }) => {
   }, [messages]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const handleSendMessage = async () => {
     if (!input.trim()) return;
-    
+
     const userMessage: Message = {
       id: Date.now().toString(),
       text: input,
-      sender: 'user',
-      timestamp: new Date()
+      sender: "user",
+      timestamp: new Date(),
     };
-    
+
     setMessages([...messages, userMessage]);
-    setInput('');
+    setInput("");
     setIsLoading(true);
-    
+
     // Simulate AI response (in a real app, this would call an API)
     setTimeout(() => {
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         text: `I'm a simulated AI response. In a real app, I would provide information about "${input}" in relation to the video content.`,
-        sender: 'ai',
-        timestamp: new Date()
+        sender: "ai",
+        timestamp: new Date(),
       };
-      
-      setMessages(prev => [...prev, aiResponse]);
+
+      setMessages((prev) => [...prev, aiResponse]);
       setIsLoading(false);
     }, 1500);
   };
@@ -70,25 +73,30 @@ const AIChat: React.FC<AIChatProps> = ({ onClose, videoContent }) => {
           <FaTimes />
         </button>
       </div>
-      
+
       <div className="chat-messages">
-        {messages.map(message => (
-          <div 
-            key={message.id} 
-            className={`message ${message.sender === 'user' ? 'user-message' : 'ai-message'}`}
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`message ${
+              message.sender === "user" ? "user-message" : "ai-message"
+            }`}
           >
             <div className="message-avatar">
-              {message.sender === 'user' ? <FaUser /> : <FaRobot />}
+              {message.sender === "user" ? <FaUser /> : <FaRobot />}
             </div>
             <div className="message-content">
               <div className="message-text">{message.text}</div>
               <div className="message-time">
-                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {message.timestamp.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </div>
             </div>
           </div>
         ))}
-        
+
         {isLoading && (
           <div className="message ai-message">
             <div className="message-avatar">
@@ -103,19 +111,19 @@ const AIChat: React.FC<AIChatProps> = ({ onClose, videoContent }) => {
             </div>
           </div>
         )}
-        
+
         <div ref={messagesEndRef} />
       </div>
-      
+
       <div className="chat-input">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask a question about this video..."
-          onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+          onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
         />
-        <button 
+        <button
           className="send-button"
           onClick={handleSendMessage}
           disabled={!input.trim() || isLoading}
@@ -127,4 +135,4 @@ const AIChat: React.FC<AIChatProps> = ({ onClose, videoContent }) => {
   );
 };
 
-export default AIChat; 
+export default AIChat;
