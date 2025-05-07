@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { FaTimes, FaPaperPlane, FaRobot, FaUser } from "react-icons/fa";
 
+
 interface AIChatProps {
   onClose: () => void;
   videoContent: string;

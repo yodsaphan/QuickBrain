@@ -1,5 +1,8 @@
 import { Video } from '@/types';
 import { isValidConfig } from '@/lib/firebase';
+import { storage, db } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 // Get videos for feed
 export const getFeedVideos = async (page = 1, limit = 10): Promise<{ videos: Video[] }> => {
@@ -167,5 +170,138 @@ export const uploadVideo = async (
   } catch (error) {
     console.error('Error uploading video:', error);
     throw error;
+  }
+};
+
+export const videoService = {
+  async uploadVideo(
+    file: File,
+    metadata: {
+      title: string;
+      description: string;
+      subject: string;
+      topic: string;
+      userId: string;
+    }
+  ): Promise<Video> {
+    try {
+      // 1. Upload video file to Firebase Storage
+      const videoRef = ref(storage, `videos/${metadata.userId}/${Date.now()}_${file.name}`);
+      const uploadResult = await uploadBytes(videoRef, file, {
+        contentType: file.type,
+        customMetadata: {
+          title: metadata.title,
+          description: metadata.description,
+          subject: metadata.subject,
+          topic: metadata.topic,
+        }
+      });
+
+      // 2. Get the download URL
+      const videoUrl = await getDownloadURL(uploadResult.ref);
+
+      // 3. Create video document in Firestore
+      const videoData: Omit<Video, 'id'> = {
+        title: metadata.title,
+        url: videoUrl,
+        description: metadata.description,
+        user: {
+          id: metadata.userId,
+          username: '', // Will be populated from user data
+          profilePic: '', // Will be populated from user data
+        },
+        subject: metadata.subject,
+        topic: metadata.topic,
+        duration: '60s', // You can get this from the video file
+        likes: 0,
+        comments: 0,
+        shares: 0,
+        views: 0,
+        isPublished: true,
+        createdAt: serverTimestamp(),
+      };
+
+      const docRef = await addDoc(collection(db, 'videos'), videoData);
+
+      return {
+        id: docRef.id,
+        ...videoData,
+        createdAt: new Date(),
+      };
+    } catch (error) {
+      console.error('Error uploading video:', error);
+      throw error;
+    }
+  },
+
+  async generateThumbnail(videoFile: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+
+      video.onloadeddata = () => {
+        video.currentTime = 1; // Capture at 1 second
+      };
+
+      video.onseeked = () => {
+        if (context) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const thumbnailUrl = canvas.toDataURL('image/jpeg');
+          resolve(thumbnailUrl);
+        }
+      };
+
+      video.onerror = () => {
+        reject(new Error('Error generating thumbnail'));
+      };
+
+      video.src = URL.createObjectURL(videoFile);
+    });
+  },
+
+  async uploadThumbnail(thumbnailFile: File, userId: string): Promise<string> {
+    try {
+      const thumbnailRef = ref(storage, `thumbnails/${userId}/${Date.now()}_${thumbnailFile.name}`);
+      const uploadResult = await uploadBytes(thumbnailRef, thumbnailFile, {
+        contentType: thumbnailFile.type,
+      });
+      return await getDownloadURL(uploadResult.ref);
+    } catch (error) {
+      console.error('Error uploading thumbnail:', error);
+      throw error;
+    }
+  },
+
+  validateVideoFile(file: File): { isValid: boolean; error?: string } {
+    // Check file type
+    if (!file.type.startsWith('video/')) {
+      return { isValid: false, error: 'Please select a valid video file' };
+    }
+
+    // Check file size (100MB limit)
+    const maxSize = 100 * 1024 * 1024; // 100MB in bytes
+    if (file.size > maxSize) {
+      return { isValid: false, error: 'Video file is too large (max 100MB)' };
+    }
+
+    return { isValid: true };
+  },
+
+  validateThumbnailFile(file: File): { isValid: boolean; error?: string } {
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      return { isValid: false, error: 'Please select a valid image file' };
+    }
+
+    // Check file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > maxSize) {
+      return { isValid: false, error: 'Thumbnail file is too large (max 5MB)' };
+    }
+
+    return { isValid: true };
   }
 }; 

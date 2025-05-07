@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { FaTimes, FaUpload, FaSpinner } from 'react-icons/fa';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store';
-import { isValidConfig } from '@/lib/firebase';
+import { videoService } from '@/services/videoService';
 
 interface VideoUploadProps {
   onClose: () => void;
@@ -19,23 +19,20 @@ const VideoUpload: React.FC<VideoUploadProps> = ({ onClose, onSuccess }) => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const user = useSelector((state: RootState) => state.auth.user);
   
-  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // Check if file is a video
-    if (!file.type.startsWith('video/')) {
-      setError('Please select a valid video file');
-      return;
-    }
-    
-    // Check file size (limit to 100MB for example)
-    if (file.size > 100 * 1024 * 1024) {
-      setError('Video file is too large (max 100MB)');
+    // Validate video file
+    const validation = videoService.validateVideoFile(file);
+    if (!validation.isValid) {
+      setError(validation.error || 'Invalid video file');
       return;
     }
     
@@ -45,26 +42,40 @@ const VideoUpload: React.FC<VideoUploadProps> = ({ onClose, onSuccess }) => {
     // Create video preview
     const url = URL.createObjectURL(file);
     setVideoPreview(url);
+    
+    // Generate thumbnail preview
+    try {
+      const thumbnailUrl = await videoService.generateThumbnail(file);
+      setThumbnailPreview(thumbnailUrl);
+    } catch (error) {
+      console.error('Error generating thumbnail:', error);
+    }
   };
   
   const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // Check if file is an image
-    if (!file.type.startsWith('image/')) {
-      setError('Please select a valid image file for thumbnail');
+    // Validate thumbnail file
+    const validation = videoService.validateThumbnailFile(file);
+    if (!validation.isValid) {
+      setError(validation.error || 'Invalid thumbnail file');
       return;
     }
     
     setThumbnailFile(file);
+    setError('');
+    
+    // Create thumbnail preview
+    const url = URL.createObjectURL(file);
+    setThumbnailPreview(url);
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isValidConfig) {
-      setError('Firebase is not properly configured. Video upload is disabled.');
+    if (!user) {
+      setError('You must be logged in to upload videos');
       return;
     }
     
@@ -82,13 +93,24 @@ const VideoUpload: React.FC<VideoUploadProps> = ({ onClose, onSuccess }) => {
     setError('');
     
     try {
-      // In a real app, you would upload the video to Firebase Storage
-      // and create a document in Firestore
+      // Upload video
+      const video = await videoService.uploadVideo(videoFile, {
+        title,
+        description,
+        subject,
+        topic,
+        userId: user.id,
+      });
       
-      // Simulate upload delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Upload thumbnail if provided
+      if (thumbnailFile) {
+        const thumbnailUrl = await videoService.uploadThumbnail(thumbnailFile, user.id);
+        // Update video document with thumbnail URL
+        // You'll need to implement this in your videoService
+      }
       
       onSuccess();
+      onClose();
     } catch (error: any) {
       setError(error.message || 'Failed to upload video');
       setUploading(false);
@@ -96,46 +118,54 @@ const VideoUpload: React.FC<VideoUploadProps> = ({ onClose, onSuccess }) => {
   };
   
   return (
-    <div className="upload-modal">
-      <div className="upload-header">
-        <h3>Upload Video</h3>
-        <button className="close-button" onClick={onClose} disabled={uploading}>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold">Upload Video</h3>
+          <button 
+            className="text-gray-500 hover:text-gray-700"
+            onClick={onClose}
+            disabled={uploading}
+          >
           <FaTimes />
         </button>
       </div>
       
-      <div className="upload-content">
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <div className="bg-red-50 text-red-500 p-3 rounded-lg mb-4">
+            {error}
+          </div>
+        )}
         
         <form onSubmit={handleSubmit}>
           {!videoFile ? (
             <div 
-              className="video-upload-area"
+              className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500"
               onClick={() => fileInputRef.current?.click()}
             >
-              <FaUpload size={48} />
-              <p>Click to select a video</p>
+              <FaUpload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">Click to select a video</p>
               <input
                 type="file"
                 ref={fileInputRef}
                 onChange={handleVideoChange}
                 accept="video/*"
-                style={{ display: 'none' }}
+                className="hidden"
               />
             </div>
           ) : (
-            <div className="video-preview">
+            <div className="space-y-4">
+              <div className="relative">
               {videoPreview && (
                 <video 
                   src={videoPreview} 
                   controls 
-                  style={{ width: '100%', maxHeight: '200px' }}
+                    className="w-full rounded-lg"
                 />
               )}
-              <p>{videoFile.name}</p>
               <button 
                 type="button" 
-                className="change-video-button"
+                  className="absolute top-2 right-2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70"
                 onClick={() => {
                   setVideoFile(null);
                   setVideoPreview(null);
@@ -144,66 +174,105 @@ const VideoUpload: React.FC<VideoUploadProps> = ({ onClose, onSuccess }) => {
                   }
                 }}
               >
-                Change Video
+                  <FaTimes />
               </button>
+              </div>
+              
+              <div className="relative">
+                {thumbnailPreview ? (
+                  <img 
+                    src={thumbnailPreview} 
+                    alt="Thumbnail" 
+                    className="w-full h-32 object-cover rounded-lg"
+                  />
+                ) : (
+                  <div 
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-500"
+                    onClick={() => thumbnailInputRef.current?.click()}
+                  >
+                    <p className="text-gray-500">Click to select a thumbnail</p>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  ref={thumbnailInputRef}
+                  onChange={handleThumbnailChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+              </div>
             </div>
           )}
           
-          <div className="form-group">
-            <label htmlFor="title">Title</label>
+          <div className="mt-4 space-y-4">
+            <div>
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                Title
+              </label>
             <input
               type="text"
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
               disabled={uploading}
             />
           </div>
           
-          <div className="form-group">
-            <label htmlFor="description">Description</label>
+            <div>
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                Description
+              </label>
             <textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={uploading}
             />
           </div>
           
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="subject">Subject</label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
+                  Subject
+                </label>
               <input
                 type="text"
                 id="subject"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={uploading}
               />
             </div>
             
-            <div className="form-group">
-              <label htmlFor="topic">Topic</label>
+              <div>
+                <label htmlFor="topic" className="block text-sm font-medium text-gray-700 mb-1">
+                  Topic
+                </label>
               <input
                 type="text"
                 id="topic"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={uploading}
               />
+              </div>
             </div>
           </div>
           
           <button 
             type="submit" 
-            className="upload-button"
+            className="w-full mt-6 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             disabled={uploading || !videoFile}
           >
             {uploading ? (
               <>
-                <FaSpinner className="spinner" />
+                <FaSpinner className="animate-spin mr-2" />
                 Uploading...
               </>
             ) : (

@@ -11,48 +11,56 @@ interface UserProfileProps {
 
 const UserProfile: React.FC<UserProfileProps> = ({ user, watchedVideos, gameScores, onBack }) => {
   return (
-    <div className="profile-container">
-      <div className="profile-header">
-        <button className="back-button" onClick={onBack}>
-          <FaArrowLeft />
+    <div className="fixed inset-0 h-screen w-screen bg-white overflow-y-auto">
+      <div className="px-4 py-5 sm:p-6">
+        <div className="flex items-center gap-4 mb-6">
+          <button 
+            className="p-2 rounded-full hover:bg-gray-100"
+            onClick={onBack}
+          >
+            <FaArrowLeft className="w-5 h-5" />
         </button>
-        <h2>Profile</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Profile</h2>
       </div>
       
-      <div className="profile-content">
-        <div className="user-info">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
           <img 
             src={user.profilePic || '/default-profile.jpg'} 
             alt={user.username} 
-            className="profile-avatar"
+              className="w-24 h-24 rounded-full object-cover"
           />
-          <h3 className="profile-username">{user.username}</h3>
-          <p className="profile-bio">{user.bio || 'No bio yet'}</p>
+          </div>
+          <h3 className="text-xl font-bold text-gray-900">{user.username}</h3>
+          <p className="text-center text-gray-600">{user.bio || 'No bio yet'}</p>
           
-          <div className="profile-stats">
-            <div className="stat-item">
-              <span className="stat-count">{watchedVideos.length}</span>
-              <span className="stat-label">Watched</span>
+          <div className="grid grid-cols-3 gap-4 w-full max-w-md">
+            <div className="bg-gray-50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-gray-900">{watchedVideos.length}</div>
+              <div className="text-sm text-gray-600">Watched</div>
             </div>
-            <div className="stat-item">
-              <span className="stat-count">{gameScores.length}</span>
-              <span className="stat-label">Quizzes</span>
+            <div className="bg-gray-50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-gray-900">{gameScores.length}</div>
+              <div className="text-sm text-gray-600">Quizzes</div>
             </div>
-            <div className="stat-item">
-              <span className="stat-count">
+            <div className="bg-gray-50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-gray-900">
                 {gameScores.reduce((total, current) => total + current.score, 0)}
-              </span>
-              <span className="stat-label">Points</span>
+              </div>
+              <div className="text-sm text-gray-600">Points</div>
             </div>
           </div>
         </div>
         
-        <div className="profile-section">
-          <h4 className="section-title">
-            <FaVideo />
+        <div className="border-t border-gray-200 my-6"></div>
+        
+        <div className="space-y-6">
+          <div>
+            <h4 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+              <FaVideo className="text-blue-500" />
             Recently Watched
           </h4>
-          <div className="video-grid">
+            <div className="mt-2 text-gray-600">
             {watchedVideos.length > 0 ? (
               <p>You've watched {watchedVideos.length} videos</p>
             ) : (
@@ -61,12 +69,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, watchedVideos, gameScor
           </div>
         </div>
         
-        <div className="profile-section">
-          <h4 className="section-title">
-            <FaGamepad />
+          <div>
+            <h4 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+              <FaGamepad className="text-blue-500" />
             Quiz Results
           </h4>
-          <div className="quiz-results">
+            <div className="mt-2 text-gray-600">
             {gameScores.length > 0 ? (
               <p>You've completed {gameScores.length} quizzes</p>
             ) : (
@@ -75,19 +83,22 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, watchedVideos, gameScor
           </div>
         </div>
         
-        <div className="profile-section">
-          <h4 className="section-title">
-            <FaTrophy />
+          <div>
+            <h4 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+              <FaTrophy className="text-blue-500" />
             Achievements
           </h4>
-          <div className="achievement-list">
-            <div className="achievement-item">
-              <div className="achievement-icon">
-                <FaTrophy />
+            <div className="mt-2">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                    <FaTrophy className="w-6 h-6 text-blue-500" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">First Video</div>
+                    <div className="text-sm text-gray-600">Watched your first video</div>
+                  </div>
               </div>
-              <div className="achievement-info">
-                <div className="achievement-title">First Video</div>
-                <div className="achievement-desc">Watched your first video</div>
               </div>
             </div>
           </div>
