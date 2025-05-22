@@ -14,7 +14,10 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-  // Initialize Firebase
+// Check if Firebase configuration is valid
+const isValidConfig = Object.values(firebaseConfig).every(value => value !== undefined && value !== '');
+
+// Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 const auth = getAuth(app);
@@ -57,5 +60,6 @@ export {
   googleProvider, 
   facebookProvider, 
   appleProvider,
-  analytics
+  analytics,
+  isValidConfig
 };

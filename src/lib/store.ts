@@ -2,12 +2,14 @@
 
 import { configureStore } from '@reduxjs/toolkit';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Video, User, Flashcard, Streak } from '@/types';
+import { Video, User, FlashcardQuestion, StreakHistory } from '@/types';
 
 // Video slice
 interface VideoState {
   videos: Video[];
   currentVideo: Video | null;
+  currentVideoIndex: number;
+  watchedVideos: string[];
   loading: boolean;
   error: string | null;
 }
@@ -15,6 +17,8 @@ interface VideoState {
 const initialVideoState: VideoState = {
   videos: [],
   currentVideo: null,
+  currentVideoIndex: 0,
+  watchedVideos: [],
   loading: false,
   error: null
 };
@@ -28,6 +32,14 @@ const videoSlice = createSlice({
     },
     setCurrentVideo: (state, action: PayloadAction<Video>) => {
       state.currentVideo = action.payload;
+    },
+    setCurrentVideoIndex: (state, action: PayloadAction<number>) => {
+      state.currentVideoIndex = action.payload;
+    },
+    addWatchedVideo: (state, action: PayloadAction<string>) => {
+      if (!state.watchedVideos.includes(action.payload)) {
+        state.watchedVideos.push(action.payload);
+      }
     }
   }
 });
@@ -67,12 +79,14 @@ const authSlice = createSlice({
 // Flashcard slice
 interface FlashcardState {
   flashcards: Record<string, FlashcardQuestion[]>;
+  gameScores: { videoId: string; score: number }[];
   loading: boolean;
   error: string | null;
 }
 
 const initialFlashcardState: FlashcardState = {
   flashcards: {},
+  gameScores: [],
   loading: false,
   error: null
 };
@@ -83,6 +97,9 @@ const flashcardSlice = createSlice({
   reducers: {
     setFlashcards: (state, action: PayloadAction<{ videoId: string; questions: FlashcardQuestion[] }>) => {
       state.flashcards[action.payload.videoId] = action.payload.questions;
+    },
+    addGameScore: (state, action: PayloadAction<{ videoId: string; score: number }>) => {
+      state.gameScores.push(action.payload);
     }
   }
 });
@@ -109,6 +126,12 @@ const streakSlice = createSlice({
     setStreakCount: (state, action: PayloadAction<number>) => {
       state.streakCount = action.payload;
     },
+    incrementStreak: (state) => {
+      state.streakCount += 1;
+    },
+    resetStreak: (state) => {
+      state.streakCount = 0;
+    },
     addStreakHistory: (state, action: PayloadAction<StreakHistory>) => {
       state.history.push(action.payload);
     }
@@ -117,7 +140,6 @@ const streakSlice = createSlice({
 
 // UI slice
 interface UIState {
-  activeTab: 'forYou' | 'following';
   showComments: boolean;
   showShare: boolean;
   showLogin: boolean;
@@ -128,7 +150,6 @@ interface UIState {
 }
 
 const initialUIState: UIState = {
-  activeTab: 'forYou',
   showComments: false,
   showShare: false,
   showLogin: false,
@@ -142,9 +163,6 @@ const uiSlice = createSlice({
   name: 'ui',
   initialState: initialUIState,
   reducers: {
-    setActiveTab: (state, action: PayloadAction<'forYou' | 'following'>) => {
-      state.activeTab = action.payload;
-    },
     toggleComments: (state) => {
       state.showComments = !state.showComments;
     },
@@ -174,8 +192,8 @@ const uiSlice = createSlice({
   }
 });
 
+// Export all actions
 export const { 
-  setActiveTab, 
   toggleComments, 
   toggleShare,
   toggleLogin,
@@ -187,10 +205,21 @@ export const {
 } = uiSlice.actions;
 
 export const { setUser, setLoading, setError } = authSlice.actions;
-export const { setVideos, setCurrentVideo } = videoSlice.actions;
-export const { setFlashcards } = flashcardSlice.actions;
-export const { setStreakCount, addStreakHistory } = streakSlice.actions;
+export const { 
+  setVideos, 
+  setCurrentVideo, 
+  setCurrentVideoIndex,
+  addWatchedVideo 
+} = videoSlice.actions;
+export const { setFlashcards, addGameScore } = flashcardSlice.actions;
+export const { 
+  setStreakCount, 
+  incrementStreak, 
+  resetStreak,
+  addStreakHistory 
+} = streakSlice.actions;
 
+// Configure store
 export const store = configureStore({
   reducer: {
     videos: videoSlice.reducer,

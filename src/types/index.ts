@@ -77,4 +77,9 @@ export interface Streak {
     achieved: boolean;
     achievedAt?: Date;
   }[];
+}
+
+export interface Message {
+  role: 'user' | 'assistant';
+  content: string;
 } 

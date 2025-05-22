@@ -15,13 +15,22 @@ import {
 import { BsLightningChargeFill } from "react-icons/bs";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, isValidConfig } from "@/lib/firebase";
-import { useDispatch } from "react-redux";
-import { setUser } from "@/lib/store";
+import { useDispatch, useSelector } from "react-redux";
+import { 
+  setUser, 
+  setVideos, 
+  setCurrentVideoIndex,
+  addWatchedVideo,
+  addGameScore,
+  incrementStreak,
+  setStreakCount,
+  setFlashcards
+} from "@/lib/store";
+import { RootState } from "@/lib/store";
 import { User, Video, FlashcardQuestion } from "@/types";
 
 // Import components
 import VideoFeed from "@/components/Feed/VideoFeed";
-import Header from "@/components/Navigation/Header";
 import BottomNav from "@/components/Navigation/BottomNav";
 import UserProfile from "@/components/Profile/UserProfile";
 import Placeholder from "@/components/Placeholder";
@@ -30,27 +39,28 @@ import StreakDisplay from "@/components/Streaks/StreakDisplay";
 import Login from "@/components/Auth/Login";
 import AIChat from "@/components/AI/AIChat";
 import VideoUpload from "@/components/Video/VideoUpload";
+import FlashcardGenerator from "@/components/Flashcards/FlashcardGenerator";
+import { generateFlashcards } from "@/services/flashcardService";
+import Cookies from 'js-cookie';
 
 export default function Home() {
   const dispatch = useDispatch();
-  const [activeTab, setActiveTab] = useState<"forYou" | "following">("forYou");
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const { videos, currentVideoIndex, watchedVideos } = useSelector((state: RootState) => state.videos);
+  const { user } = useSelector((state: RootState) => state.auth);
+  const { streakCount } = useSelector((state: RootState) => state.streaks);
+  const { gameScores } = useSelector((state: RootState) => state.flashcards);
+
   const [currentView, setCurrentView] = useState<
     "home" | "learn" | "profile" | "search" | "login"
   >("home");
   const [showGame, setShowGame] = useState(false);
-  const [streakCount, setStreakCount] = useState(0);
-  const [watchedVideos, setWatchedVideos] = useState<string[]>([]);
-  const [gameScores, setGameScores] = useState<
-    { videoId: string; score: number }[]
-  >([]);
-  const [user, setUserState] = useState<User | null>(null);
   const [showLogin, setShowLogin] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
+  const [selectedTopic, setSelectedTopic] = useState<string>("");
 
   // Sample video data (in a real app, this would come from an API)
-  const videos: Video[] = [
+  const sampleVideos: Video[] = [
     {
       id: "1",
       title: "Quadratic Equations",
@@ -144,6 +154,9 @@ export default function Home() {
   };
 
   useEffect(() => {
+    // Initialize videos
+    dispatch(setVideos(sampleVideos));
+
     // Check if Firebase is properly configured
     if (!isValidConfig) {
       console.warn(
@@ -164,11 +177,9 @@ export default function Home() {
           createdAt: new Date(),
         };
 
-        setUserState(userData);
         dispatch(setUser(userData));
       } else {
         // User is signed out
-        setUserState(null);
         dispatch(setUser(null));
       }
     });
@@ -179,27 +190,22 @@ export default function Home() {
 
   // Handle video change
   const handleVideoChange = (index: number) => {
-    setCurrentVideoIndex(index);
+    dispatch(setCurrentVideoIndex(index));
 
     // Add to watched videos if not already watched
     const videoId = videos[index].id;
     if (!watchedVideos.includes(videoId)) {
-      setWatchedVideos([...watchedVideos, videoId]);
+      dispatch(addWatchedVideo(videoId));
 
       // Update streak if this is the first video watched today
       const today = new Date().toDateString();
       const lastWatchDate = localStorage.getItem("lastWatchDate");
 
       if (lastWatchDate !== today) {
-        setStreakCount(streakCount + 1);
+        dispatch(incrementStreak());
         localStorage.setItem("lastWatchDate", today);
       }
     }
-  };
-
-  // Handle tab change
-  const handleTabChange = (tab: "forYou" | "following") => {
-    setActiveTab(tab);
   };
 
   // Handle navigation
@@ -222,10 +228,10 @@ export default function Home() {
   const handleGameComplete = (score: number) => {
     // Add game score
     const videoId = videos[currentVideoIndex].id;
-    setGameScores([...gameScores, { videoId, score }]);
+    dispatch(addGameScore({ videoId, score }));
 
     // Update streak
-    setStreakCount(streakCount + 1);
+    dispatch(incrementStreak());
 
     // Close game
     setShowGame(false);
@@ -233,7 +239,7 @@ export default function Home() {
 
   // Handle login
   const handleLogin = (userData: User) => {
-    setUserState(userData);
+    dispatch(setUser(userData));
     setShowLogin(false);
   };
 
@@ -257,70 +263,94 @@ export default function Home() {
     // In a real app, you would refresh the videos list here
   };
 
-  // Render the current view
-  const renderView = () => {
-    switch (currentView) {
-      case "home":
-        return (
-          <>
-            <Header
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-              user={user}
-            />
-            <VideoFeed
-              videos={videos}
-              currentIndex={currentVideoIndex}
-              onVideoChange={handleVideoChange}
-              onGameStart={handleGameStart}
-              activeTab={activeTab}
-            />
-            <StreakDisplay count={streakCount} />
-          </>
-        );
-      case "learn":
-        return (
-          <Placeholder
-            title="Learning Center"
-            icon={<FaBrain size={48} />}
-            onBack={() => setCurrentView("home")}
+  const handleGenerateNewSet = async () => {
+    try {
+      // Reset video index
+      dispatch(setCurrentVideoIndex(0));
+      
+      // Generate new flashcards for each video
+      for (const video of sampleVideos) {
+        const topic = video.topic || video.title;
+        const flashcards = await generateFlashcards(topic);
+        
+        // Convert the flashcards to the correct format
+        const formattedFlashcards = flashcards.map(card => ({
+          question: card.question.en,
+          options: [
+            card.answer.en,
+            "Incorrect option 1",
+            "Incorrect option 2",
+            "Incorrect option 3"
+          ],
+          correctAnswer: 0
+        }));
+
+        // Update the flashcards in the store for this video
+        dispatch(setFlashcards({ 
+          videoId: video.id, 
+          questions: formattedFlashcards 
+        }));
+      }
+      
+      // Reset videos
+      dispatch(setVideos(sampleVideos));
+    } catch (error) {
+      console.error('Error generating new flashcard sets:', error);
+    }
+  };
+
+  const handleNavigateToLearn = (topic: string) => {
+    setSelectedTopic(topic);
+    setCurrentView("learn");
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <main className="pb-20">
+        {currentView === "home" && (
+          <VideoFeed
+            videos={videos}
+            currentIndex={currentVideoIndex}
+            onVideoChange={handleVideoChange}
+            onGameStart={handleGameStart}
+            onNavigateToLearn={handleNavigateToLearn}
+            watchedVideos={watchedVideos}
+            onGenerateNewSet={handleGenerateNewSet}
           />
-        );
-      case "profile":
-        return user ? (
-          <UserProfile
+        )}
+        {currentView === "learn" && (
+          <FlashcardGenerator 
+            topic={selectedTopic || videos[currentVideoIndex]?.topic || "General Knowledge"}
+            onClose={() => setCurrentView("home")}
+          />
+        )}
+        {currentView === "profile" && user && (
+          <UserProfile 
             user={user}
             watchedVideos={watchedVideos}
             gameScores={gameScores}
             onBack={() => setCurrentView("home")}
           />
-        ) : (
-          <Placeholder
-            title="Please Login"
-            icon={<FaUser size={48} />}
-            onBack={() => setCurrentView("home")}
-          />
-        );
-      case "search":
-        return (
+        )}
+        {currentView === "search" && (
           <Placeholder
             title="Search"
             icon={<FaSearch size={48} />}
             onBack={() => setCurrentView("home")}
           />
-        );
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="app-container">
-      {renderView()}
-      <BottomNav activeView={currentView} onNavigate={handleNavigation} />
+        )}
+      </main>
+      <BottomNav onNavigate={handleNavigation} activeView={currentView} />
+      {showGame && (
+        <FlashcardGame
+          questions={flashcards[videos[currentVideoIndex].id] || []}
+          onComplete={handleGameComplete}
+          onClose={() => setShowGame(false)}
+        />
+      )}
       {showLogin && <Login onLogin={handleLogin} onClose={closeLogin} />}
       {showAIChat && (
-        <AIChat
+        <AIChat 
           onClose={() => setShowAIChat(false)}
           videoContent={videos[currentVideoIndex]?.description || ""}
         />
@@ -329,13 +359,6 @@ export default function Home() {
         <VideoUpload
           onClose={() => setShowUpload(false)}
           onSuccess={handleUploadSuccess}
-        />
-      )}
-      {showGame && (
-        <FlashcardGame
-          questions={flashcards[videos[currentVideoIndex].id] || []}
-          onComplete={handleGameComplete}
-          onClose={() => setShowGame(false)}
         />
       )}
     </div>
