@@ -9,6 +9,7 @@ export const getFeedVideos = async (page = 1, limit = 10): Promise<{ videos: Vid
   try {
     if (!isValidConfig) {
       // Return mock data for development
+      console.log('Returning mock videos for development');
       return {
         videos: [
           {

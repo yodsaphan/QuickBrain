@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { FaRobot, FaTimes, FaPaperPlane } from 'react-icons/fa';
 import { Message } from '@/types';
-import { sendMessageToAI } from '@/services/aiService';
 
 interface ChatBotProps {
   isOpen: boolean;
@@ -36,10 +35,26 @@ const ChatBot = ({ isOpen, onClose }: ChatBotProps) => {
     setError(null);
 
     try {
-      const response = await sendMessageToAI([...messages, userMessage]);
+      const response = await fetch('/api/ai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          mode: 'chat',
+          messages: [...messages, userMessage],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => null);
+        throw new Error(errorBody?.error || 'Failed to get AI response');
+      }
+
+      const data = await response.json();
       const assistantMessage: Message = {
         role: 'assistant',
-        content: response
+        content: data.response,
       };
       setMessages(prev => [...prev, assistantMessage]);
     } catch (err) {

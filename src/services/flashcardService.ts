@@ -1,17 +1,16 @@
 import { Message } from '@/types';
+import { sendMessageToAI, checkGeminiApiKey } from './aiService';
 
 interface Flashcard {
-  question: {
-    en: string;
-    th: string;
+  english: {
+    question: string;
+    answer: string;
   };
-  answer: {
-    en: string;
-    th: string;
+  thai: {
+    question: string;
+    answer: string;
   };
 }
-
-const CHUTES_API_URL = 'https://llm.chutes.ai/v1/chat/completions';
 
 const generateFlashcardPrompt = (topic: string, count: number = 5): string => {
   return `Generate ${count} unique educational flashcards about ${topic}.
@@ -26,13 +25,13 @@ For each flashcard:
 
 Return ONLY a JSON array of objects with the following structure:
 {
-  "question": {
-    "en": "English question",
-    "th": "คำถามภาษาไทย"
+  "english": {
+    "question": "English question",
+    "answer": "English answer"
   },
-  "answer": {
-    "en": "English answer",
-    "th": "คำตอบภาษาไทย"
+  "thai": {
+    "question": "คำถามภาษาไทย",
+    "answer": "คำตอบภาษาไทย"
   }
 }
 
@@ -40,55 +39,26 @@ Keep answers concise and clear. Do not include any thinking process, explanation
 };
 
 export const generateFlashcards = async (topic: string, count: number = 5): Promise<Flashcard[]> => {
-  if (!process.env.NEXT_PUBLIC_CHUTES_API_KEY) {
-    throw new Error('Chutes API key is not configured');
-  }
+  await checkGeminiApiKey();
 
   try {
-    const response = await fetch(CHUTES_API_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_CHUTES_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'deepseek-ai/DeepSeek-R1',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a helpful educational assistant and translator. Generate unique and diverse questions about the given topic, and provide accurate Thai translations. Keep responses concise and clear. Return ONLY the JSON array of flashcards, no other text or thinking process.'
-          },
-          {
-            role: 'user',
-            content: generateFlashcardPrompt(topic, count)
-          }
-        ],
-        stream: false,
-        max_tokens: 2048,  // Increased token limit
-        temperature: 0.9
-      }),
-    });
+    const messages: Message[] = [
+      {
+        role: 'user',
+        content: generateFlashcardPrompt(topic, count)
+      }
+    ];
+    const aiResponse = await sendMessageToAI(messages);
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      console.error('API Error Details:', {
-        status: response.status,
-        statusText: response.statusText,
-        errorData,
-        url: CHUTES_API_URL
-      });
-      
-      throw new Error(`API request failed: ${response.statusText} (${response.status})`);
-    }
-
-    const data = await response.json();
-    if (!data.choices?.[0]?.message?.content) {
+    const data = aiResponse ? JSON.parse(aiResponse) : null;
+    
+    if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
       throw new Error('Invalid response format from API');
     }
-
+  
     try {
       // Clean the response content to ensure it's valid JSON
-      const content = data.choices[0].message.content.trim();
+      const content = data.candidates[0].content.parts[0].text.trim();
       
       // Extract JSON array from the response
       const jsonMatch = content.match(/\[\s*\{[\s\S]*\}\s*\]/);
@@ -113,12 +83,12 @@ export const generateFlashcards = async (topic: string, count: number = 5): Prom
       // Validate each flashcard has the required fields
       const validFlashcards = flashcards.filter(card => 
         typeof card === 'object' && 
-        typeof card.question === 'object' && 
-        typeof card.answer === 'object' &&
-        typeof card.question.en === 'string' && 
-        typeof card.question.th === 'string' && 
-        typeof card.answer.en === 'string' && 
-        typeof card.answer.th === 'string'
+        typeof card.english === 'object' && 
+        typeof card.thai === 'object' &&
+        typeof card.english.question === 'string' && 
+        typeof card.thai.question === 'string' && 
+        typeof card.english.answer === 'string' && 
+        typeof card.thai.answer === 'string'
       );
 
       if (validFlashcards.length === 0) {
@@ -128,7 +98,7 @@ export const generateFlashcards = async (topic: string, count: number = 5): Prom
       return validFlashcards;
     } catch (parseError) {
       console.error('Error parsing flashcard response:', parseError);
-      console.error('Raw response:', data.choices[0].message.content);
+      console.error('Error, Raw response:', data.candidates[0].content.parts[0].text);
       throw new Error('Failed to parse flashcard response');
     }
   } catch (error) {

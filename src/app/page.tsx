@@ -40,8 +40,6 @@ import Login from "@/components/Auth/Login";
 import AIChat from "@/components/AI/AIChat";
 import VideoUpload from "@/components/Video/VideoUpload";
 import FlashcardGenerator from "@/components/Flashcards/FlashcardGenerator";
-import { generateFlashcards } from "@/services/flashcardService";
-import Cookies from 'js-cookie';
 
 export default function Home() {
   const dispatch = useDispatch();
@@ -193,17 +191,40 @@ export default function Home() {
     dispatch(setCurrentVideoIndex(index));
 
     // Add to watched videos if not already watched
-    const videoId = videos[index].id;
-    if (!watchedVideos.includes(videoId)) {
-      dispatch(addWatchedVideo(videoId));
+    const videoId = videos[index]?.id;
+    if (!videoId || watchedVideos.includes(videoId)) {
+      return;
+    }
 
-      // Update streak if this is the first video watched today
-      const today = new Date().toDateString();
-      const lastWatchDate = localStorage.getItem("lastWatchDate");
+    dispatch(addWatchedVideo(videoId));
 
-      if (lastWatchDate !== today) {
-        dispatch(incrementStreak());
-        localStorage.setItem("lastWatchDate", today);
+    // Update streak if this is the first video watched today
+    const today = new Date().toDateString();
+    let lastWatchDate: string | null = null;
+
+    if (typeof window !== "undefined") {
+      try {
+        const storage = window.localStorage;
+        if (storage && typeof storage.getItem === "function") {
+          lastWatchDate = storage.getItem("lastWatchDate");
+        }
+      } catch (error) {
+        console.warn("Unable to read lastWatchDate from localStorage:", error);
+      }
+    }
+
+    if (lastWatchDate !== today) {
+      dispatch(incrementStreak());
+
+      if (typeof window !== "undefined") {
+        try {
+          const storage = window.localStorage;
+          if (storage && typeof storage.setItem === "function") {
+            storage.setItem("lastWatchDate", today);
+          }
+        } catch (error) {
+          console.warn("Unable to write lastWatchDate to localStorage:", error);
+        }
       }
     }
   };
@@ -265,16 +286,27 @@ export default function Home() {
 
   const handleGenerateNewSet = async () => {
     try {
-      // Reset video index
       dispatch(setCurrentVideoIndex(0));
-      
-      // Generate new flashcards for each video
+
       for (const video of sampleVideos) {
         const topic = video.topic || video.title;
-        const flashcards = await generateFlashcards(topic);
-        
-        // Convert the flashcards to the correct format
-        const formattedFlashcards = flashcards.map(card => ({
+        const response = await fetch('/api/ai', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ mode: 'flashcards', topic }),
+        });
+
+        if (!response.ok) {
+          const errorBody = await response.json().catch(() => null);
+          throw new Error(errorBody?.error || 'Failed to generate flashcards');
+        }
+
+        const data = await response.json();
+        const flashcards = data.flashcards;
+
+        const formattedFlashcards = flashcards.map((card: any) => ({
           question: card.question.en,
           options: [
             card.answer.en,
@@ -285,14 +317,12 @@ export default function Home() {
           correctAnswer: 0
         }));
 
-        // Update the flashcards in the store for this video
-        dispatch(setFlashcards({ 
-          videoId: video.id, 
-          questions: formattedFlashcards 
+        dispatch(setFlashcards({
+          videoId: video.id,
+          questions: formattedFlashcards,
         }));
       }
-      
-      // Reset videos
+
       dispatch(setVideos(sampleVideos));
     } catch (error) {
       console.error('Error generating new flashcard sets:', error);

@@ -2,17 +2,16 @@
 
 import { useState, useEffect, useRef } from "react";
 import { FaRobot, FaLanguage, FaArrowLeft } from "react-icons/fa";
-import { generateFlashcards } from "@/services/flashcardService";
 import Cookies from 'js-cookie';
 
 interface Flashcard {
-  question: {
-    en: string;
-    th: string;
+  english: {
+    question: string;
+    answer: string;
   };
-  answer: {
-    en: string;
-    th: string;
+  thai: {
+    question: string;
+    answer: string;
   };
 }
 
@@ -31,6 +30,24 @@ const FlashcardGenerator = ({ topic, onClose }: FlashcardGeneratorProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLastCard, setIsLastCard] = useState(false);
   const [viewedCardsCount, setViewedCardsCount] = useState(0);
+
+  const fetchFlashcards = async (topic: string, count: number = 5) => {
+    const response = await fetch('/api/ai', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ mode: 'flashcards', topic, count }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      throw new Error(errorBody?.error || 'Failed to generate flashcards');
+    }
+
+    const data = await response.json();
+    return data.flashcards as Flashcard[];
+  };
 
   // Load flashcards from cookies or generate new ones
   const loadFlashcards = async (forceNew: boolean = false) => {
@@ -56,7 +73,7 @@ const FlashcardGenerator = ({ topic, onClose }: FlashcardGeneratorProps) => {
       }
 
       // Generate new flashcards
-      const newFlashcards = await generateFlashcards(topic);
+      const newFlashcards = await fetchFlashcards(topic);
       setFlashcards(newFlashcards);
       setShowAnswers(new Array(newFlashcards.length).fill(false));
       setCurrentIndex(0);
@@ -198,12 +215,12 @@ const FlashcardGenerator = ({ topic, onClose }: FlashcardGeneratorProps) => {
                 {/* Question */}
                 <div>
                   <h3 className="text-3xl font-medium mb-6">
-                    {language === 'th' ? card.question.th : card.question.en}
+                    {language === 'th' ? card.thai.question : card.english.question}
                   </h3>
                   {showAnswers[index] && (
                     <div className="mt-8 p-8 bg-gray-50 rounded-lg">
                       <p className="text-2xl text-gray-700">
-                        {language === 'th' ? card.answer.th : card.answer.en}
+                        {language === 'th' ? card.thai.answer : card.english.answer}
                       </p>
                     </div>
                   )}
