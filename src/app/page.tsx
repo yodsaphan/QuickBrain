@@ -62,7 +62,7 @@ export default function Home() {
     {
       id: "1",
       title: "Quadratic Equations",
-      url: "/videos/1.mp4",
+      url: "https://stream.mux.com/rR8P8mSaKDzz02TsftugTUdI00cQPJX00oy.m3u8",
       description:
         "Learn how to solve quadratic equations in 60 seconds! #math #algebra #education",
       user: {
@@ -83,7 +83,7 @@ export default function Home() {
     {
       id: "2",
       title: "Photosynthesis Explained",
-      url: "/videos/2.mp4",
+      url: "/videos/1.mp4",
       description:
         "How plants convert sunlight into energy in 60 seconds! #biology #science #plants",
       user: {

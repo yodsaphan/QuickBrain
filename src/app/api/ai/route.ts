@@ -3,6 +3,7 @@ import { generateFlashcards } from '@/services/flashcardService';
 import { sendMessageToAI, checkGeminiApiKey } from '@/services/aiService';
 
 export async function POST(request: NextRequest) {
+  
   try {
     const body = await request.json();
     const mode = body.mode;

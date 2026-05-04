@@ -15,7 +15,7 @@ export const getFeedVideos = async (page = 1, limit = 10): Promise<{ videos: Vid
           {
             id: '1',
             title: 'Quadratic Equations',
-            url: 'https://example.com/videos/1.mp4',
+            url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
             description: 'Learn how to solve quadratic equations in 60 seconds! #math #algebra #education',
             user: {
               id: 'user1',
@@ -35,7 +35,7 @@ export const getFeedVideos = async (page = 1, limit = 10): Promise<{ videos: Vid
           {
             id: '2',
             title: 'Photosynthesis Explained',
-            url: 'https://example.com/videos/2.mp4',
+            url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
             description: 'How plants convert sunlight into energy in 60 seconds! #biology #science #plants',
             user: {
               id: 'user2',
@@ -79,7 +79,7 @@ export const getVideoById = async (videoId: string): Promise<{ video: Video }> =
         video: {
           id: videoId,
           title: 'Sample Video',
-          url: 'https://example.com/videos/sample.mp4',
+          url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
           description: 'This is a sample video for development',
           user: {
             id: 'user1',
