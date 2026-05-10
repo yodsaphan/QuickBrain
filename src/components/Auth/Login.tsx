@@ -7,9 +7,10 @@ import { signInWithPopup } from 'firebase/auth';
 interface LoginProps {
   onLogin: (user: any) => void;
   onClose: () => void;
+  onCreateTestUser?: () => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin, onClose }) => {
+const Login: React.FC<LoginProps> = ({ onLogin, onClose, onCreateTestUser }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -76,7 +77,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onClose }) => {
         </form>
         
         <div className="social-login">
-          <p>Or continue with</p>
+          <p className="text-center">Or continue with</p>
           
           <div className="social-buttons">
             <button 
@@ -101,6 +102,18 @@ const Login: React.FC<LoginProps> = ({ onLogin, onClose }) => {
             </button>
           </div>
         </div>
+        
+        {onCreateTestUser && (
+          <div className="test-account">
+            <p>Development Testing</p>
+            <button 
+              className="test-button"
+              onClick={onCreateTestUser}
+            >
+              Create Test Account
+            </button>
+          </div>
+        )}
         
         <div className="toggle-form">
           <p>

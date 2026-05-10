@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaArrowLeft, FaVideo, FaGamepad, FaTrophy } from 'react-icons/fa';
+import { FaArrowLeft, FaVideo, FaGamepad, FaTrophy, FaSignOutAlt } from 'react-icons/fa';
 import { User } from '@/types';
 
 interface UserProfileProps {
@@ -7,21 +7,33 @@ interface UserProfileProps {
   watchedVideos: string[];
   gameScores: {videoId: string, score: number}[];
   onBack: () => void;
+  onLogout?: () => void;
 }
 
-const UserProfile: React.FC<UserProfileProps> = ({ user, watchedVideos, gameScores, onBack }) => {
+const UserProfile: React.FC<UserProfileProps> = ({ user, watchedVideos, gameScores, onBack, onLogout }) => {
   return (
     <div className="fixed inset-0 h-screen w-screen bg-white overflow-y-auto">
       <div className="px-4 py-5 sm:p-6">
-        <div className="flex items-center gap-4 mb-6">
-          <button 
-            className="p-2 rounded-full hover:bg-gray-100"
-            onClick={onBack}
-          >
-            <FaArrowLeft className="w-5 h-5" />
-        </button>
-          <h2 className="text-2xl font-bold text-gray-900">Profile</h2>
-      </div>
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-4">
+            <button 
+              className="p-2 rounded-full hover:bg-gray-100"
+              onClick={onBack}
+            >
+              <FaArrowLeft className="w-5 h-5" />
+          </button>
+            <h2 className="text-2xl font-bold text-gray-900">Profile</h2>
+          </div>
+          {onLogout && (
+            <button 
+              className="p-2 rounded-full hover:bg-red-50 text-red-600"
+              onClick={onLogout}
+              title="Logout"
+            >
+              <FaSignOutAlt className="w-5 h-5" />
+            </button>
+          )}
+        </div>
       
         <div className="flex flex-col items-center gap-4">
           <div className="relative">

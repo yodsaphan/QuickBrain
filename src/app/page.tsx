@@ -264,6 +264,31 @@ export default function Home() {
     setShowLogin(false);
   };
 
+  // Create test user for development
+  const createTestUser = () => {
+    const testUser: User = {
+      id: "test-user-123",
+      username: "TestUser",
+      email: "test@example.com",
+      profilePic: "/default-profile.jpg",
+      bio: "This is a test account for development purposes",
+      createdAt: new Date(),
+    };
+    dispatch(setUser(testUser));
+    setShowLogin(false);
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      dispatch(setUser(null));
+      setCurrentView("home");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
+
   // Close login
   const closeLogin = () => {
     setShowLogin(false);
@@ -354,14 +379,20 @@ export default function Home() {
             onClose={() => setCurrentView("home")}
           />
         )}
-        {currentView === "profile" && user && (
+        {currentView === "profile" && (user && (
           <UserProfile 
             user={user}
             watchedVideos={watchedVideos}
             gameScores={gameScores}
             onBack={() => setCurrentView("home")}
+            onLogout={handleLogout}
           />
-        )}
+        )) || (!user && (<Login 
+        onLogin={handleLogin} 
+        onClose={closeLogin} 
+        onCreateTestUser={createTestUser} 
+        />
+        ))}
         {currentView === "search" && (
           <Placeholder
             title="Search"
@@ -378,7 +409,7 @@ export default function Home() {
           onClose={() => setShowGame(false)}
         />
       )}
-      {showLogin && <Login onLogin={handleLogin} onClose={closeLogin} />}
+      {showLogin && <Login onLogin={handleLogin} onClose={closeLogin} onCreateTestUser={createTestUser} />}
       {showAIChat && (
         <AIChat 
           onClose={() => setShowAIChat(false)}
